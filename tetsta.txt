@@ -1,0 +1,474 @@
+local UILibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/zxcursedsocute/UI-Library/refs/heads/main/UI-Library.txt"))()
+
+local windows = UILibrary.CreateWindow("MIYU HUB ","","590","STA")
+
+local Home = windows:AddTab("Home","Home")
+
+Home:AddSection('Eps')
+
+
+--// SERVICES
+local player = game.Players.LocalPlayer
+local runService = game:GetService("RunService")
+
+--// TOGGLES
+local Toggles = {
+    Weapon = false,
+    Breakable = false,
+    Item = false,
+    Gun = false,
+    Med = false,
+    Ammo = false,
+    Fuel = false,
+    Food = false,
+    Crate = false,
+    Battery = false,
+    Armor = false
+}
+
+--// CONFIG (TẤT CẢ LOẠI ESP)
+local ESP_TYPES = {
+    Weapon = {
+        color = Color3.fromRGB(255,0,0),
+        list = {
+            "Bat","Knife","Crowbar","Spiked Bat","Spear","Hatchet","Katana","Fire Axe","Sledgehammer","Chainsaw"
+        }
+    },
+
+    Breakable = {
+        color = Color3.fromRGB(255,255,255),
+        list = {"Barrel","Military Box","Scrap Pile","Refined Scrap Pile"}
+    },
+
+    Item = {
+        color = Color3.fromRGB(255,255,0),
+        list = {"Scrap","Tray","Reactor Component","Screws","Spatula","Dumbell","Refined Metal","Bucket","Watch","TV","AC"}
+    },
+
+    Gun = {
+        color = Color3.fromRGB(139,69,19),
+        list = {"Pistol","Revolver","Uzi","Shotgun","Rifle","Assault Rifle","Double Barrel","Ak 47","Sniper","SVD","Combat SMG","AA 12","LMG","Desert Eagle","Heavy Sniper","Ray Gun","Flamethrower","Grenade Launcher"}
+    },
+
+    Med = {
+        color = Color3.fromRGB(0,255,0),
+        list = {"Bandage","Medkit","Compound R","Compound I","Compound S"}
+    },
+
+    Ammo = {
+        color = Color3.fromRGB(150,150,150),
+        list = {"Long","Medium","Shells","Pistol","Ammo Box"}
+    },
+
+    Fuel = {
+        color = Color3.fromRGB(0,170,255),
+        list = {"Fuel","Refined Fuel","Nuclear Fuel"}
+    },
+
+    Food = {
+        color = Color3.fromRGB(255,140,0),
+        list = {"Carrot","Bloxy Cola","Bloxiade","Beans","Chips","MRE"}
+    },
+
+    Crate = {
+        color = Color3.fromRGB(0,0,0),
+        list = {"Crate","Better Crate","Emerald Chest","Reactor Crate","Mystery Box"}
+    },
+
+    Battery = {
+        color = Color3.fromRGB(170,0,255),
+        list = {"Battery","Battery Pack"}
+    },
+
+    Armor = {
+        color = Color3.fromRGB(255,105,180),
+        list = {"Light Armor","Medium Armor","Heavy Armor","Power Armor","Gas Mask"}
+    }
+}
+
+--// STORAGE
+local espList = {}
+
+--// GET POSITION
+local function getPosition(obj)
+    if obj:IsA("BasePart") then
+        return obj.Position
+    elseif obj:IsA("Model") then
+        local part = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")
+        if part then return part.Position end
+    end
+end
+
+--// CHECK TYPE
+local function getType(name)
+    for typeName, data in pairs(ESP_TYPES) do
+        for _, item in pairs(data.list) do
+            if item == name then
+                return typeName, data.color
+            end
+        end
+    end
+end
+
+--// CREATE ESP
+local function createESP(obj)
+    if espList[obj] then return end
+
+    local typeName, color = getType(obj.Name)
+    if not typeName then return end
+
+    local pos = getPosition(obj)
+    if not pos then return end
+
+    local gui = Instance.new("BillboardGui")
+    gui.Size = UDim2.new(0,120,0,40)
+    gui.AlwaysOnTop = true
+    gui.StudsOffset = Vector3.new(0,2,0)
+
+    local text = Instance.new("TextLabel")
+    text.Size = UDim2.new(1,0,1,0)
+    text.BackgroundTransparency = 1
+    text.TextColor3 = color
+    text.TextStrokeTransparency = 0
+    text.TextScaled = true
+    text.Font = Enum.Font.SourceSansBold
+    text.Parent = gui
+
+    if typeName == "Crate" then
+        text.TextStrokeColor3 = Color3.fromRGB(255,255,255)
+    end
+
+    gui.Parent = obj
+
+    espList[obj] = {
+        gui = gui,
+        text = text,
+        type = typeName
+    }
+end
+
+--// UPDATE LOOP
+runService.RenderStepped:Connect(function()
+    for obj, data in pairs(espList) do
+        if not obj or not obj.Parent then
+            data.gui:Destroy()
+            espList[obj] = nil
+        else
+            -- toggle check
+            if not Toggles[data.type] then
+                data.gui.Enabled = false
+            else
+                data.gui.Enabled = true
+
+                local char = player.Character
+                if char and char:FindFirstChild("HumanoidRootPart") then
+                    local dist = (char.HumanoidRootPart.Position - getPosition(obj)).Magnitude
+                    data.text.Text = obj.Name .. " [" .. math.floor(dist) .. "m]"
+                end
+            end
+        end
+    end
+end)
+
+--// SCAN MAP
+for _, v in pairs(workspace:GetDescendants()) do
+    createESP(v)
+end
+
+workspace.DescendantAdded:Connect(function(v)
+    task.wait(0.2)
+    createESP(v)
+end)
+
+--// UI TOGGLES
+Home:AddToggle({Name="Weapon ESP", Callback=function(v) Toggles.Weapon=v end})
+Home:AddToggle({Name="Breakable ESP", Callback=function(v) Toggles.Breakable=v end})
+Home:AddToggle({Name="Item ESP", Callback=function(v) Toggles.Item=v end})
+Home:AddToggle({Name="Gun ESP", Callback=function(v) Toggles.Gun=v end})
+Home:AddToggle({Name="Med ESP", Callback=function(v) Toggles.Med=v end})
+Home:AddToggle({Name="Ammo ESP", Callback=function(v) Toggles.Ammo=v end})
+Home:AddToggle({Name="Fuel ESP", Callback=function(v) Toggles.Fuel=v end})
+Home:AddToggle({Name="Food ESP", Callback=function(v) Toggles.Food=v end})
+Home:AddToggle({Name="Crate ESP", Callback=function(v) Toggles.Crate=v end})
+Home:AddToggle({Name="Battery ESP", Callback=function(v) Toggles.Battery=v end})
+Home:AddToggle({Name="Armor ESP", Callback=function(v) Toggles.Armor=v end})
+
+-----------------------------------------------------------------------------------------------------------//
+
+local Player = windows:AddTab("player","Player")
+
+Player:AddSection('Main')
+
+--// SERVICES
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+
+--// TOGGLES
+local noclip = false
+local speed = false
+local killaura = false
+local infjump = false
+
+--// Noclip
+RunService.Stepped:Connect(function()
+    if noclip then
+        local char = player.Character
+        if char then
+            for _, v in pairs(char:GetDescendants()) do
+                if v:IsA("BasePart") then
+                    v.CanCollide = false
+                end
+            end
+        end
+    end
+end)
+
+--// Speed
+local function setSpeed()
+    local char = player.Character or player.CharacterAdded:Wait()
+    local hum = char:WaitForChild("Humanoid")
+    
+    if speed then
+        hum.WalkSpeed = 30
+    else
+        hum.WalkSpeed = 16
+    end
+end
+
+player.CharacterAdded:Connect(function()
+    task.wait(1)
+    setSpeed()
+end)
+
+--// Kill Aura
+local RANGE = 30
+local DELAY = 0.1
+
+local function getWeapon(char)
+    for _, tool in pairs(char:GetChildren()) do
+        if tool:IsA("Tool") then
+            local swing = tool:FindFirstChild("Swing")
+            local hit = tool:FindFirstChild("HitTargets")
+
+            if swing and hit then
+                return tool, swing, hit
+            end
+        end
+    end
+end
+
+task.spawn(function()
+    while true do
+        task.wait(DELAY)
+
+        if not killaura then continue end
+
+        local char = player.Character
+        if not char then continue end
+
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if not hrp then continue end
+
+        local tool, swing, hit = getWeapon(char)
+        if not tool then continue end
+
+        local targets = {}
+
+        for _, v in pairs(workspace:WaitForChild("Characters"):GetChildren()) do
+            local enemyHRP = v:FindFirstChild("HumanoidRootPart")
+            local humanoid = v:FindFirstChild("Humanoid")
+
+            if enemyHRP and humanoid and humanoid.Health > 0 then
+                if (enemyHRP.Position - hrp.Position).Magnitude <= RANGE then
+                    table.insert(targets, v)
+                end
+            end
+        end
+
+        if #targets > 0 then
+            swing:FireServer()
+            hit:FireServer(targets)
+        end
+    end
+end)
+
+--// Infinite Jump
+UIS.JumpRequest:Connect(function()
+    if infjump then
+        local char = player.Character
+        if char and char:FindFirstChild("Humanoid") then
+            char.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end
+end)
+
+--// UI TOGGLES
+
+Player:AddToggle({
+    Name = "Noclip",
+    Description = "Đi xuyên tường",
+    Callback = function(v)
+        noclip = v
+    end,
+})
+
+Player:AddToggle({
+    Name = "Speed X2",
+	Description = 'Tăng tốc độ',
+    Callback = function(v)
+        speed = v
+        setSpeed()
+    end,
+})
+
+Player:AddToggle({
+    Name = "Kill Aura",
+	Description = 'Đánh Lan',
+    Callback = function(v)
+        killaura = v
+    end,
+})
+
+Player:AddToggle({
+    Name = "Infinite Jump",
+	Description = 'Nhảy liên tục',
+    Callback = function(v)
+        infjump = v
+    end,
+})
+
+-------------------------------------------------------------------------------------------------------------//
+
+local Misc = windows:AddTab("misc","Misc")
+
+Misc:AddSection('Support')
+
+local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local VirtualUser = game:GetService("VirtualUser")
+
+local player = Players.LocalPlayer
+
+--// STATES
+local FullBright = false
+local FPSBoost = false
+local AntiAFK = false
+
+local fullBrightConn
+local fpsConn
+
+-- 🌞 FULL BRIGHT
+Misc:AddToggle({
+    Name = 'Full Bright',
+    Description = 'Luôn sáng map',
+    Callback = function(state)
+        FullBright = state
+
+        if state then
+            fullBrightConn = RunService.RenderStepped:Connect(function()
+                Lighting.Brightness = 5
+                Lighting.ClockTime = 14
+                Lighting.FogEnd = 1000000
+                Lighting.GlobalShadows = false
+                Lighting.OutdoorAmbient = Color3.fromRGB(255,255,255)
+            end)
+            print("🌞 FULL BRIGHT ON")
+        else
+            if fullBrightConn then fullBrightConn:Disconnect() end
+            print("🌙 FULL BRIGHT OFF")
+        end
+    end
+})
+
+-- ⚡ FPS BOOST
+local function optimizeLighting()
+    Lighting.FogStart = 0
+    Lighting.FogEnd = 1000000
+
+    local atmo = Lighting:FindFirstChildOfClass("Atmosphere")
+    if atmo then atmo:Destroy() end
+
+    for _, v in pairs(Lighting:GetChildren()) do
+        if v:IsA("BloomEffect")
+        or v:IsA("BlurEffect")
+        or v:IsA("SunRaysEffect")
+        or v:IsA("ColorCorrectionEffect")
+        or v:IsA("DepthOfFieldEffect") then
+            v:Destroy()
+        end
+    end
+end
+
+local function optimizeMap()
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("BasePart") then
+            v.Material = Enum.Material.Plastic
+            v.Reflectance = 0
+            v.CastShadow = false
+        elseif v:IsA("Decal") or v:IsA("Texture") then
+            v.Transparency = 1
+        elseif v:IsA("ParticleEmitter")
+        or v:IsA("Trail")
+        or v:IsA("Smoke")
+        or v:IsA("Fire") then
+            v:Destroy()
+        end
+    end
+end
+
+Misc:AddToggle({
+    Name = 'FPS Boost',
+    Description = 'Giảm lag nhẹ',
+    Callback = function(state)
+        FPSBoost = state
+
+        if state then
+            optimizeLighting()
+            optimizeMap()
+
+            fpsConn = RunService.RenderStepped:Connect(function()
+                Lighting.FogEnd = 1000000
+            end)
+
+            print("🚀 FPS BOOST ON")
+        else
+            if fpsConn then fpsConn:Disconnect() end
+            print("❌ FPS BOOST OFF")
+        end
+    end
+})
+
+-- 🟢 ANTI AFK
+Misc:AddToggle({
+    Name = 'Anti AFK',
+    Description = 'Không bị kick khi AFK',
+    Callback = function(state)
+        AntiAFK = state
+
+        if state then
+            player.Idled:Connect(function()
+                if not AntiAFK then return end
+                VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+                task.wait(1)
+                VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+            end)
+
+            task.spawn(function()
+                while AntiAFK do
+                    task.wait(1200)
+                    VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+                    task.wait(1)
+                    VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+                end
+            end)
+
+            print("🟢 ANTI AFK ON")
+        else
+            print("🔴 ANTI AFK OFF")
+        end
+    end
+})
