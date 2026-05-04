@@ -195,7 +195,7 @@ Home:AddToggle({Name="Armor ESP", Callback=function(v) Toggles.Armor=v end})
 
 -----------------------------------------------------------------------------------------------------------//
 
-local Player = windows:AddTab("player","Player")
+local Player = windows:AddTab("Player","Player")
 
 Player:AddSection('Main')
 
@@ -227,20 +227,22 @@ RunService.Stepped:Connect(function()
 end)
 
 --// Speed
-local function setSpeed()
-    local char = player.Character or player.CharacterAdded:Wait()
-    local hum = char:WaitForChild("Humanoid")
-    
-    if speed then
-        hum.WalkSpeed = 30
-    else
-        hum.WalkSpeed = 16
-    end
-end
+RunService.RenderStepped:Connect(function()
+    local char = player.Character
+    if not char then return end
 
-player.CharacterAdded:Connect(function()
-    task.wait(1)
-    setSpeed()
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not hum then return end
+
+    if speed then
+        if hum.WalkSpeed ~= 30 then
+            hum.WalkSpeed = 30
+        end
+    else
+        if hum.WalkSpeed ~= 16 then
+            hum.WalkSpeed = 16
+        end
+    end
 end)
 
 --// Kill Aura
@@ -261,9 +263,7 @@ local function getWeapon(char)
 end
 
 task.spawn(function()
-    while true do
-        task.wait(DELAY)
-
+    while task.wait(DELAY) do
         if not killaura then continue end
 
         local char = player.Character
@@ -277,17 +277,47 @@ task.spawn(function()
 
         local targets = {}
 
-        for _, v in pairs(workspace:WaitForChild("Characters"):GetChildren()) do
-            local enemyHRP = v:FindFirstChild("HumanoidRootPart")
-            local humanoid = v:FindFirstChild("Humanoid")
+        --// 1. Player / Mob
+        local charactersFolder = workspace:FindFirstChild("Characters")
+        if charactersFolder then
+            for _, v in pairs(charactersFolder:GetChildren()) do
+                if v ~= char then
+                    local enemyHRP = v:FindFirstChild("HumanoidRootPart")
+                    local humanoid = v:FindFirstChild("Humanoid")
 
-            if enemyHRP and humanoid and humanoid.Health > 0 then
-                if (enemyHRP.Position - hrp.Position).Magnitude <= RANGE then
-                    table.insert(targets, v)
+                    if enemyHRP and humanoid and humanoid.Health > 0 then
+                        if (enemyHRP.Position - hrp.Position).Magnitude <= RANGE then
+                            table.insert(targets, v)
+                        end
+                    end
                 end
             end
         end
 
+        --// 2. Structures (Barrel, Scrap...)
+        local structures = workspace:FindFirstChild("Structures")
+        if structures then
+            for _, obj in pairs(structures:GetChildren()) do
+                if obj:IsA("Model") then
+                    local part = obj:FindFirstChild("HumanoidRootPart") 
+                                or obj:FindFirstChildWhichIsA("BasePart")
+
+                    if part then
+                        local dist = (part.Position - hrp.Position).Magnitude
+                        if dist <= RANGE then
+                            if obj.Name == "Barrel"
+                            or obj.Name == "Military Box"
+                            or obj.Name == "Scrap Pile"
+                            or obj.Name == "Refined Scrap Pile" then
+                                table.insert(targets, obj)
+                            end
+                        end
+                    end
+                end
+            end
+        end
+
+        --// FIRE
         if #targets > 0 then
             swing:FireServer()
             hit:FireServer(targets)
@@ -320,7 +350,6 @@ Player:AddToggle({
 	Description = 'Tăng tốc độ',
     Callback = function(v)
         speed = v
-        setSpeed()
     end,
 })
 
@@ -342,7 +371,7 @@ Player:AddToggle({
 
 -------------------------------------------------------------------------------------------------------------//
 
-local Misc = windows:AddTab("misc","Misc")
+local Misc = windows:AddTab("Misc","Misc")
 
 Misc:AddSection('Support')
 
