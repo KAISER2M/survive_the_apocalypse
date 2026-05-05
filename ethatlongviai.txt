@@ -6,14 +6,6 @@ local Home = windows:AddTab("Home","Home")
 
 Home:AddSection('EPS GAME')
 
-local UILibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/zxcursedsocute/UI-Library/refs/heads/main/UI-Library.txt"))()
-
-local windows = UILibrary.CreateWindow("MIYU HUB ","","590","STA")
-
-local Home = windows:AddTab("Home","Home")
-
-Home:AddSection('EPS GAME')
-
 --// SERVICES
 local player = game.Players.LocalPlayer
 local runService = game:GetService("RunService")
