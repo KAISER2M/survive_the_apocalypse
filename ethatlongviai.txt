@@ -6,12 +6,20 @@ local Home = windows:AddTab("Home","Home")
 
 Home:AddSection('EPS GAME')
 
+local UILibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/zxcursedsocute/UI-Library/refs/heads/main/UI-Library.txt"))()
+
+local windows = UILibrary.CreateWindow("MIYU HUB ","","590","STA")
+
+local Home = windows:AddTab("Home","Home")
+
+Home:AddSection('EPS GAME')
+
 --// SERVICES
 local player = game.Players.LocalPlayer
 local runService = game:GetService("RunService")
 
 --// SETTINGS
-local MAX_DISTANCE = 333 -- giảm lag cực mạnh (có thể chỉnh)
+local MAX_DISTANCE = 333
 
 --// TOGGLES
 local Toggles = {
@@ -28,7 +36,7 @@ local Toggles = {
     Armor = false
 }
 
---// CONFIG ESP (MÀU RIÊNG)
+--// CONFIG ESP
 local ESP_TYPES = {
     Weapon = {color = Color3.fromRGB(255,50,50), list = {"Bat","Knife","Crowbar","Spiked Bat","Spear","Hatchet","Katana","Fire Axe","Sledgehammer","Chainsaw"}},
     Breakable = {color = Color3.fromRGB(200,200,200), list = {"Barrel","Military Box","Scrap Pile","Refined Scrap Pile"}},
@@ -38,7 +46,7 @@ local ESP_TYPES = {
     Ammo = {color = Color3.fromRGB(180,180,180), list = {"Long","Medium","Shells","Pistol","Ammo Box"}},
     Fuel = {color = Color3.fromRGB(0,200,255), list = {"Fuel","Refined Fuel","Nuclear Fuel"}},
     Food = {color = Color3.fromRGB(255,140,0), list = {"Carrot","Bloxy Cola","Bloxiade","Beans","Chips","MRE"}},
-    Crate = {color = Color3.fromRGB(0,0,0), list = {"Crate","Better Crate","Emerald Chest","Reactor Crate","Mystery Box"}},
+    Crate = {color = Color3.fromRGB(255,165,0), list = {"Crate","Better Crate","Emerald Chest","Reactor Crate","Mystery Box"}},
     Battery = {color = Color3.fromRGB(170,0,255), list = {"Battery","Battery Pack"}},
     Armor = {color = Color3.fromRGB(255,105,180), list = {"Light Armor","Medium Armor","Heavy Armor","Power Armor","Gas Mask"}}
 }
@@ -47,10 +55,10 @@ local ESP_TYPES = {
 local espList = {}
 local typeCache = {}
 
---// FAST TYPE CHECK (cache để nhẹ)
+--// FIX: FAST TYPE CHECK
 local function getType(name)
     if typeCache[name] then
-        return typeCache[name]
+        return typeCache[name][1], typeCache[name][2]  -- ✅ fix trả đúng 2 giá trị
     end
 
     for typeName, data in pairs(ESP_TYPES) do
@@ -87,7 +95,7 @@ local function createESP(obj)
     gui.Size = UDim2.new(0,110,0,30)
     gui.AlwaysOnTop = true
     gui.StudsOffset = Vector3.new(0,1.5,0)
-    gui.MaxDistance = MAX_DISTANCE -- 🔥 chống lag
+    gui.MaxDistance = MAX_DISTANCE
 
     local text = Instance.new("TextLabel")
     text.Size = UDim2.new(1,0,1,0)
@@ -107,10 +115,10 @@ local function createESP(obj)
     }
 end
 
---// UPDATE LOOP (GIẢM LAG)
+--// UPDATE LOOP
 local lastUpdate = 0
 runService.RenderStepped:Connect(function()
-    if tick() - lastUpdate < 0.1 then return end -- update 10fps thôi
+    if tick() - lastUpdate < 0.1 then return end
     lastUpdate = tick()
 
     local char = player.Character
@@ -141,7 +149,7 @@ runService.RenderStepped:Connect(function()
     end
 end)
 
---// SCAN NHẸ
+--// SCAN
 task.spawn(function()
     for _, v in ipairs(workspace:GetDescendants()) do
         createESP(v)
@@ -154,7 +162,7 @@ workspace.DescendantAdded:Connect(function(v)
     end)
 end)
 
---// UI
+--// UI TOGGLES
 Home:AddToggle({Name="Weapon ESP", Callback=function(v) Toggles.Weapon=v end})
 Home:AddToggle({Name="Breakable ESP", Callback=function(v) Toggles.Breakable=v end})
 Home:AddToggle({Name="Item ESP", Callback=function(v) Toggles.Item=v end})
