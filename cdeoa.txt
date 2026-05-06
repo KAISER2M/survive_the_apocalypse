@@ -133,7 +133,7 @@ end)
 local TARGET_FOLDERS = {
     "DroppedItems",
     "Structures",
-    "Crates",
+    "Crate",
     "Items",
     "Characters"
 }
