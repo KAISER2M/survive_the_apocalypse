@@ -133,9 +133,9 @@ end)
 local TARGET_FOLDERS = {
     "DroppedItems",
     "Structures",
-    "Map",
+    "Crates",
     "Items",
-    "BackpackStorage"
+    "Characters"
 }
 
 local function connectFolder(folder)
