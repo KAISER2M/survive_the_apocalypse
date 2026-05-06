@@ -23,7 +23,7 @@ local Toggles = {
     Ammo=false,
     Fuel=false,
     Food=false,
-    Crate=false
+    Crate=false,
     Battery=false,
     Armor=false,
     Throwable=false,
@@ -49,30 +49,32 @@ local ESP_TYPES = {
 
 --// STORAGE
 local espList = {}
-local typeCache = {}
+local cache = {}
 
 --// TYPE CHECK
 local function getType(name)
-    if typeCache[name] then
-        return typeCache[name][1], typeCache[name][2]
+    if cache[name] then
+        return cache[name][1], cache[name][2]
     end
+
+    local lname = string.lower(name)
 
     for t,data in pairs(ESP_TYPES) do
         for _,n in ipairs(data.list) do
-            if n == name or string.find(name, n) then
-                typeCache[name] = {t, data.color}
+            if string.find(lname, string.lower(n)) then
+                cache[name] = {t, data.color}
                 return t, data.color
             end
         end
     end
 end
 
---// ROOT
+--// ROOT FIX
 local function getRoot(obj)
     if obj:IsA("BasePart") then
         return obj
     elseif obj:IsA("Model") then
-        return obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")
+        return obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart", true)
     end
 end
 
@@ -97,94 +99,73 @@ local function createESP(obj)
     text.Size = UDim2.new(1,0,1,0)
     text.BackgroundTransparency = 1
     text.TextColor3 = color
-    text.TextStrokeTransparency = 0.3
     text.TextScaled = true
     text.Font = Enum.Font.GothamBold
     text.Parent = gui
 
-    espList[obj] = {
-        gui = gui,
-        text = text,
-        type = t,
-        root = root
-    }
+    espList[obj] = {gui=gui,text=text,type=t,root=root}
 end
 
 --// UPDATE LOOP
-local last = 0
 runService.RenderStepped:Connect(function()
-    if tick() - last < 0.1 then return end
-    last = tick()
-
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
 
     for obj,data in pairs(espList) do
-        if not obj or not obj.Parent or not data.root then
-            if data.gui then data.gui:Destroy() end
+        if not obj or not obj.Parent then
+            data.gui:Destroy()
             espList[obj] = nil
         else
-            if not Toggles[data.type] then
-                data.gui.Enabled = false
-            else
-                local dist = (hrp.Position - data.root.Position).Magnitude
+            local dist = (hrp.Position - data.root.Position).Magnitude
 
-                if dist > MAX_DISTANCE then
-                    data.gui.Enabled = false
-                else
-                    data.gui.Enabled = true
-                    data.text.Text = string.format("%s [%dm]", obj.Name, math.floor(dist))
-                end
+            if dist <= MAX_DISTANCE and Toggles[data.type] then
+                data.gui.Enabled = true
+                data.text.Text = obj.Name.." ["..math.floor(dist).."m]"
+            else
+                data.gui.Enabled = false
             end
         end
     end
 end)
 
---// CONNECT FOLDER
+--// FOLDER SYSTEM
+local TARGET_FOLDERS = {
+    "DroppedItems",
+    "Structures",
+    "Map",
+    "Items",
+    "BackpackStorage"
+}
+
 local function connectFolder(folder)
     for _,v in ipairs(folder:GetDescendants()) do
         createESP(v)
     end
 
     folder.DescendantAdded:Connect(function(v)
-        task.spawn(function()
-            for i = 1,5 do
-                task.wait(0.2)
-                createESP(v)
-                if espList[v] then break end
-            end
-        end)
+        createESP(v)
     end)
 end
 
---// TARGET FOLDERS
-local TARGET_FOLDERS = {
-    "DroppedItems",
-    "Structures",
-    "Crates",
-    "Armor",
-    "BackpackStorage"
-}
+local function tryConnectFolder(name)
+    local f = workspace:FindFirstChild(name)
+    if f then connectFolder(f) end
+end
 
---// INIT
 task.spawn(function()
     for _,name in ipairs(TARGET_FOLDERS) do
-        local folder = workspace:FindFirstChild(name)
-        if folder then
-            connectFolder(folder)
-        end
+        tryConnectFolder(name)
     end
 end)
 
---// WAIT FOLDER
-workspace.ChildAdded:Connect(function(child)
-    if table.find(TARGET_FOLDERS, child.Name) then
-        connectFolder(child)
+workspace.ChildAdded:Connect(function(c)
+    if table.find(TARGET_FOLDERS, c.Name) then
+        connectFolder(c)
     end
 end)
 
---// UI TOGGLES
+--// 🔥 FULL UI TOGGLE (MANUAL, KHÔNG AUTO)
 Home:AddToggle({Name="Weapon ESP", Callback=function(v) Toggles.Weapon=v end})
 Home:AddToggle({Name="Breakable ESP", Callback=function(v) Toggles.Breakable=v end})
 Home:AddToggle({Name="Item ESP", Callback=function(v) Toggles.Item=v end})
