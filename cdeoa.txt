@@ -16,30 +16,73 @@ local LOAD_DISTANCE = 180
 local REMOVE_DISTANCE = 240
 
 --// PERFORMANCE
-local SCAN_PER_FRAME = 15 -- giảm lag hơn 25
+local SCAN_PER_FRAME = 15
 
 --// TOGGLES
 local Toggles = {
-    Weapon=false,Breakable=false,Item=false,Gun=false,Med=false,
-    Ammo=false,Fuel=false,Food=false,Crate=false,Battery=false,
-    Armor=false,Throwable=false,Backpack=false
+    Weapon=false,
+    Breakable=false,
+    Item=false,
+    Gun=false,
+    Med=false,
+    Ammo=false,
+    Fuel=false,
+    Food=false,
+    Crate=false,
+    Battery=false,
+    Armor=false,
+    Throwable=false,
+    Backpack=false
 }
 
---// CONFIG (FULL LẠI)
+--// CONFIG FULL
 local ESP_TYPES = {
-    Weapon={color=Color3.fromRGB(255,50,50),list={"Bat","Knife","Crowbar","Katana"}},
-    Breakable={color=Color3.fromRGB(200,200,200),list={"Barrel","Box","Pile"}},
-    Item={color=Color3.fromRGB(255,255,0),list={"Scrap","Metal","Component"}},
-    Gun={color=Color3.fromRGB(150,75,0),list={"Pistol","Shotgun","Rifle","AK"}},
-    Med={color=Color3.fromRGB(0,255,100),list={"Bandage","Medkit"}},
-    Ammo={color=Color3.fromRGB(180,180,180),list={"Ammo"}},
-    Fuel={color=Color3.fromRGB(0,200,255),list={"Fuel"}},
-    Food={color=Color3.fromRGB(255,140,0),list={"Beans","MRE","Cola"}},
-    Crate={color=Color3.fromRGB(255,165,0),list={"Crate","Chest","Box","Loot"}},
-    Battery={color=Color3.fromRGB(170,0,255),list={"Battery"}},
-    Armor={color=Color3.fromRGB(255,105,180),list={"Armor","Helmet"}},
-    Throwable={color=Color3.fromRGB(210,180,140),list={"Grenade","Molotov"}},
-    Backpack={color=Color3.fromRGB(0,255,200),list={"Backpack"}}
+    Weapon={color=Color3.fromRGB(255,50,50),list={
+        "Bat","Knife","Crowbar","Spiked Bat","Spear","Hatchet","Katana",
+        "Fire Axe","Sledgehammer","Riot Shield","Scythe","Dark Scythe",
+        "Bloodthirster","Chainsaw"
+    }},
+    Breakable={color=Color3.fromRGB(200,200,200),list={
+        "Barrel","Military Box","Scrap Pile","Refined Scrap Pile"
+    }},
+    Item={color=Color3.fromRGB(255,255,0),list={
+        "Scrap","Tray","Reactor Component","Screws","Spatula","Dumbell",
+        "Refined Metal","Bucket","Watch","TV","AC"
+    }},
+    Gun={color=Color3.fromRGB(150,75,0),list={
+        "Pistol","Minigun","Medi Gun","Revolver","Uzi","Shotgun","Rifle",
+        "Assault Rifle","Double Barrel","Ak-47","Sniper","SVD",
+        "Combat SMG","AA-12","LMG","Desert Eagle","Heavy Sniper",
+        "Ray Gun","Flamethrower","Grenade Launcher"
+    }},
+    Med={color=Color3.fromRGB(0,255,100),list={
+        "Bandage","Medkit","Compound R","Compound I","Compound S"
+    }},
+    Ammo={color=Color3.fromRGB(180,180,180),list={
+        "Long Ammo","Medium Ammo","Shells","Pistol Ammo","Ammo Box"
+    }},
+    Fuel={color=Color3.fromRGB(0,200,255),list={
+        "Fuel","Refined Fuel","Nuclear Fuel","Gas","Oil","Diesel","Petrol","Can","Barrel"
+    }},
+    Food={color=Color3.fromRGB(255,140,0),list={
+        "Carrot","Bloxy Cola","Bloxiade","Beans","Chips","MRE"
+    }},
+    Crate={color=Color3.fromRGB(255,165,0),list={
+        "Crate","Chest","Box","Loot","Supply","Mystery Box",
+        "Better Crate","Emerald Chest","Reactor Crate"
+    }},
+    Battery={color=Color3.fromRGB(170,0,255),list={
+        "Battery","Battery Pack"
+    }},
+    Armor={color=Color3.fromRGB(255,105,180),list={
+        "Light Armor","Medium Armor","Heavy Armor","Power Armor","Gas Mask"
+    }},
+    Throwable={color=Color3.fromRGB(210,180,140),list={
+        "Grenade","Molotov","Flashbang","Tear Gas"
+    }},
+    Backpack={color=Color3.fromRGB(0,255,200),list={
+        "Basic Backpack","Good Backpack","Great Backpack"
+    }}
 }
 
 --// STORAGE
@@ -47,14 +90,17 @@ local espList = {}
 local typeCache = {}
 local scanQueue = {}
 
---// TYPE
+--// TYPE (FIX KHÔNG MISS)
 local function getType(name)
     if typeCache[name] then
         return typeCache[name][1], typeCache[name][2]
     end
+
+    local lname = string.lower(name)
+
     for t,data in pairs(ESP_TYPES) do
         for _,n in ipairs(data.list) do
-            if string.find(name, n) then
+            if string.find(lname, string.lower(n)) then
                 typeCache[name] = {t, data.color}
                 return t, data.color
             end
@@ -62,12 +108,12 @@ local function getType(name)
     end
 end
 
---// ROOT
+--// ROOT (FIX MODEL)
 local function getRoot(obj)
     if obj:IsA("BasePart") then
         return obj
     elseif obj:IsA("Model") then
-        return obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")
+        return obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart", true)
     end
 end
 
@@ -131,7 +177,7 @@ runService.RenderStepped:Connect(function()
     end
 end)
 
---// QUEUE PROCESS
+--// QUEUE PROCESS (ANTI LAG)
 runService.Heartbeat:Connect(function()
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
