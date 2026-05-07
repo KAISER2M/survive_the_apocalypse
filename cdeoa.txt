@@ -18,7 +18,7 @@ local espDefinitions = {
         colors = { fill = Color3.fromRGB(255,30,30), outline = Color3.fromRGB(255,255,255), text = Color3.fromRGB(255,120,120) }
     },
     {
-        key = "Melee",
+        key = "Weapons",
         items = {
             "Bat","Chainsaw","Crowbar","Fire Axe","Hatchet","Katana","Knife",
             "Riot Shield","Scythe","Sledgehammer","Spear","Spiked Bat"
@@ -74,15 +74,26 @@ local espDefinitions = {
         key = "Backpacks",
         items = { "Basic Backpack","Good Backpack","Great Backpack" },
         colors = { fill = Color3.fromRGB(150,100,255), outline = Color3.fromRGB(0,0,0), text = Color3.fromRGB(200,180,255) }
+    },
+    {
+        key = "Breakables",
+        items = { "Barrel","Scrap Pile" },
+        colors = { fill = Color3.fromRGB(139,69,19), outline = Color3.fromRGB(60,30,10), text = Color3.fromRGB(210,180,140)}
     }
 }
 
+--// ================= SETUP =================
 --// ================= SETUP =================
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
-local droppedItemsFolder = workspace:FindFirstChild("DroppedItems") or workspace
+-- scan nhiều folder
+local foldersToScan = {
+    workspace:FindFirstChild("DroppedItems"),
+    workspace:FindFirstChild("Structures"),
+    workspace:FindFirstChild("Characters")
+}
 
 local espSystems = {}
 local espConfig = {
@@ -99,9 +110,8 @@ end
 for _, def in ipairs(espDefinitions) do
     local sys = {
         key = def.key,
-        items = {},
         itemList = {},
-        vars = { ESP=false },
+        vars = { ESP = false },
         instances = {},
         colors = def.colors
     }
@@ -110,8 +120,13 @@ for _, def in ipairs(espDefinitions) do
         sys.itemList[v] = true
     end
 
+    -- CREATE
     function sys:create(item)
         if self.instances[item] then return end
+
+        -- tránh ESP player
+        if item.Parent and item.Parent:FindFirstChild("Humanoid") then return end
+
         local part = getMain(item)
         if not part then return end
 
@@ -140,7 +155,7 @@ for _, def in ipairs(espDefinitions) do
 
         local conn
         conn = RunService.Heartbeat:Connect(function()
-            if not item.Parent then
+            if not item or not item.Parent then
                 conn:Disconnect()
                 highlight:Destroy()
                 bill:Destroy()
@@ -150,6 +165,7 @@ for _, def in ipairs(espDefinitions) do
         self.instances[item] = {h=highlight,b=bill,c=conn}
     end
 
+    -- REMOVE
     function sys:remove(item)
         local e = self.instances[item]
         if not e then return end
@@ -159,36 +175,60 @@ for _, def in ipairs(espDefinitions) do
         self.instances[item] = nil
     end
 
+    -- REFRESH
     function sys:refresh()
-        for i,_ in pairs(self.instances) do
-            self:remove(i)
+        for item,_ in pairs(self.instances) do
+            self:remove(item)
         end
+
         if not self.vars.ESP then return end
-        for _,v in ipairs(droppedItemsFolder:GetChildren()) do
-            if self.itemList[v.Name] then
-                self:create(v)
+
+        local foundFolder = false
+
+        for _,folder in ipairs(foldersToScan) do
+            if folder then
+                foundFolder = true
+                for _,v in ipairs(folder:GetChildren()) do
+                    if self.itemList[v.Name] then
+                        self:create(v)
+                    end
+                end
+            end
+        end
+
+        -- fallback workspace
+        if not foundFolder then
+            for _,v in ipairs(workspace:GetChildren()) do
+                if self.itemList[v.Name] then
+                    self:create(v)
+                end
             end
         end
     end
 
-    droppedItemsFolder.ChildAdded:Connect(function(v)
-        task.wait(0.2)
-        if sys.vars.ESP and sys.itemList[v.Name] then
-            sys:create(v)
-        end
-    end)
+    -- LISTENERS
+    for _,folder in ipairs(foldersToScan) do
+        if folder then
+            folder.ChildAdded:Connect(function(v)
+                task.wait(0.2)
+                if sys.vars.ESP and sys.itemList[v.Name] then
+                    sys:create(v)
+                end
+            end)
 
-    droppedItemsFolder.ChildRemoved:Connect(function(v)
-        sys:remove(v)
-    end)
+            folder.ChildRemoved:Connect(function(v)
+                sys:remove(v)
+            end)
+        end
+    end
 
     espSystems[def.key] = sys
 end
 
 --// ================= UI TOGGLE =================
 local order = {
-    "Gun","Melee","Medical","Armor","Food",
-    "Resource","Fuel","Ammo","Consumables","Backpacks"
+    "Gun","Weapons","Medical","Armor","Food",
+    "Resource","Fuel","Ammo","Consumables","Backpacks","Breakables"
 }
 
 for _, key in ipairs(order) do
@@ -197,8 +237,10 @@ for _, key in ipairs(order) do
         Default = false,
         Callback = function(v)
             local sys = espSystems[key]
-            sys.vars.ESP = v
-            sys:refresh()
+            if sys then
+                sys.vars.ESP = v
+                sys:refresh()
+            end
         end
     })
 end
