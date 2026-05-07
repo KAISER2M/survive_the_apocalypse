@@ -6,103 +6,43 @@ local Home = windows:AddTab("Home","Home")
 
 Home:AddSection('ESP GAME')
 
---// ================= ESP DEFINITIONS =================
 local espDefinitions = {
-    {
-        key = "Gun",
-        items = {
-            "AA-12","AK-47","Assault Rifle","Desert Eagle","Double Barrel",
-            "Flamethrower","Grenade Launcher","LMG","MediGun","Pistol",
-            "Ray Gun","Revolver","Rifle","Shotgun","Sniper","SVD","Uzi"
-        },
-        colors = { fill = Color3.fromRGB(255,30,30), outline = Color3.fromRGB(255,255,255), text = Color3.fromRGB(255,120,120) }
-    },
-    {
-        key = "Weapons",
-        items = {
-            "Bat","Chainsaw","Crowbar","Fire Axe","Hatchet","Katana","Knife",
-            "Riot Shield","Scythe","Sledgehammer","Spear","Spiked Bat"
-        },
-        colors = { fill = Color3.fromRGB(255,140,0), outline = Color3.fromRGB(255,255,255), text = Color3.fromRGB(255,200,100) }
-    },
-    {
-        key = "Medical",
-        items = {
-            "Bandage","Compound H","Compound I","Compound R","Compound S","Medkit"
-        },
-        colors = { fill = Color3.fromRGB(0,255,80), outline = Color3.fromRGB(255,255,255), text = Color3.fromRGB(150,255,150) }
-    },
-    {
-        key = "Armor",
-        items = {
-            "Power Armor","Light Armor","Medium Armor","Heavy Armor"
-        },
-        colors = { fill = Color3.fromRGB(0,100,255), outline = Color3.fromRGB(255,255,255), text = Color3.fromRGB(160,200,255) }
-    },
-    {
-        key = "Food",
-        items = {
-            "Chips","Carrot","Bloxiade","Beans","MRE","Bloxy Cola"
-        },
-        colors = { fill = Color3.fromRGB(190,255,0), outline = Color3.fromRGB(255,255,255), text = Color3.fromRGB(210,255,150) }
-    },
-    {
-        key = "Resource",
-        items = {
-            "AC","Battery","Battery Pack","Bucket","Dumbell","Exhaust Pipe",
-            "Reactor Component","Refined Metal","Satellite Dish","Scrap",
-            "Screws","Spatula","Tray","TV","Watch","Zombie Heart"
-        },
-        colors = { fill = Color3.fromRGB(0,220,255), outline = Color3.fromRGB(255,255,255), text = Color3.fromRGB(180,240,255) }
-    },
-    {
-        key = "Fuel",
-        items = { "Nuclear Fuel","Refined Fuel","Fuel" },
-        colors = { fill = Color3.fromRGB(255,220,0), outline = Color3.fromRGB(255,255,255), text = Color3.fromRGB(255,240,160) }
-    },
-    {
-        key = "Ammo",
-        items = { "Ammo Box","Long Ammo","Medium Ammo","Pistol Ammo","Shells" },
-        colors = { fill = Color3.fromRGB(255,255,255), outline = Color3.fromRGB(0,0,0), text = Color3.fromRGB(200,200,200) }
-    },
-    {
-        key = "Consumables",
-        items = { "Grenade","Molotov" },
-        colors = { fill = Color3.fromRGB(255,80,80), outline = Color3.fromRGB(0,0,0), text = Color3.fromRGB(255,150,150) }
-    },
-    {
-        key = "Backpacks",
-        items = { "Basic Backpack","Good Backpack","Great Backpack" },
-        colors = { fill = Color3.fromRGB(150,100,255), outline = Color3.fromRGB(0,0,0), text = Color3.fromRGB(200,180,255) }
-    },
-    {
-        key = "Breakables",
-        items = { "Barrel","Scrap Pile" },
-        colors = { fill = Color3.fromRGB(139,69,19), outline = Color3.fromRGB(60,30,10), text = Color3.fromRGB(210,180,140)}
-    }
+    { key = "Gun", items = { "AA-12","AK-47","Assault Rifle","Desert Eagle","Double Barrel", "Flamethrower","Grenade Launcher","LMG","MediGun","Pistol", "Ray Gun","Revolver","Rifle","Shotgun","Sniper","SVD","Uzi" }, colors = { fill = Color3.fromRGB(255,30,30), outline = Color3.fromRGB(255,255,255), text = Color3.fromRGB(255,120,120) } },
+    { key = "Weapons", items = { "Bat","Chainsaw","Crowbar","Fire Axe","Hatchet","Katana","Knife", "Riot Shield","Scythe","Sledgehammer","Spear","Spiked Bat" }, colors = { fill = Color3.fromRGB(255,140,0), outline = Color3.fromRGB(255,255,255), text = Color3.fromRGB(255,200,100) } },
+    { key = "Medical", items = { "Bandage","Compound H","Compound I","Compound R","Compound S","Medkit" }, colors = { fill = Color3.fromRGB(0,255,80), outline = Color3.fromRGB(255,255,255), text = Color3.fromRGB(150,255,150) } },
+    { key = "Armor", items = { "Power Armor","Light Armor","Medium Armor","Heavy Armor" }, colors = { fill = Color3.fromRGB(0,100,255), outline = Color3.fromRGB(255,255,255), text = Color3.fromRGB(160,200,255) } },
+    { key = "Food", items = { "Chips","Carrot","Bloxiade","Beans","MRE","Bloxy Cola" }, colors = { fill = Color3.fromRGB(190,255,0), outline = Color3.fromRGB(255,255,255), text = Color3.fromRGB(210,255,150) } },
+    { key = "Resource", items = { "AC","Battery","Battery Pack","Bucket","Dumbell","Exhaust Pipe", "Reactor Component","Refined Metal","Satellite Dish","Scrap", "Screws","Spatula","Tray","TV","Watch","Zombie Heart" }, colors = { fill = Color3.fromRGB(0,220,255), outline = Color3.fromRGB(255,255,255), text = Color3.fromRGB(180,240,255) } },
+    { key = "Fuel", items = { "Nuclear Fuel","Refined Fuel","Fuel" }, colors = { fill = Color3.fromRGB(255,220,0), outline = Color3.fromRGB(255,255,255), text = Color3.fromRGB(255,240,160) } },
+    { key = "Ammo", items = { "Ammo Box","Long Ammo","Medium Ammo","Pistol Ammo","Shells" }, colors = { fill = Color3.fromRGB(255,255,255), outline = Color3.fromRGB(0,0,0), text = Color3.fromRGB(200,200,200) } },
+    { key = "Consumables", items = { "Grenade","Molotov" }, colors = { fill = Color3.fromRGB(255,80,80), outline = Color3.fromRGB(0,0,0), text = Color3.fromRGB(255,150,150) } },
+    { key = "Backpacks", items = { "Basic Backpack","Good Backpack","Great Backpack" }, colors = { fill = Color3.fromRGB(150,100,255), outline = Color3.fromRGB(0,0,0), text = Color3.fromRGB(200,180,255) } },
+    { key = "Breakables", items = { "Barrel","Scrap Pile" }, colors = { fill = Color3.fromRGB(139,69,19), outline = Color3.fromRGB(60,30,10), text = Color3.fromRGB(210,180,140)} },
+    { key = "Crates", items = { "Default" }, colors = { fill = Color3.fromRGB(20,20,20), outline = Color3.fromRGB(255,255,255), text = Color3.fromRGB(100,100,100) } }
 }
 
---// ================= SETUP =================
 --// ================= SETUP =================
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 
--- scan nhiều folder
+-- Thêm folder Crates vào danh sách scan
 local foldersToScan = {
-    workspace:FindFirstChild("DroppedItems"),
-    workspace:FindFirstChild("Structures"),
-    workspace:FindFirstChild("Characters")
+    Workspace:FindFirstChild("DroppedItems"),
+    Workspace:FindFirstChild("Structures"),
+    Workspace:FindFirstChild("Characters"),
+    Workspace:FindFirstChild("Map") and Workspace.Map:FindFirstChild("Crates") -- Folder Crate của bạn
 }
 
 local espSystems = {}
-local espConfig = {
-    fillTransparency = 0.5,
-    outlineTransparency = 0,
-    textSize = 13
-}
+local espConfig = { fillTransparency = 0.5, outlineTransparency = 0, textSize = 13 }
 
+-- Hàm lấy part chính (đặc biệt cho Crate cần lấy "Inner")
 local function getMain(item)
+    if item.Name == "Default" and item:FindFirstChild("Inner") then
+        return item.Inner
+    end
     return item.PrimaryPart or item:FindFirstChildWhichIsA("BasePart")
 end
 
@@ -115,28 +55,24 @@ for _, def in ipairs(espDefinitions) do
         instances = {},
         colors = def.colors
     }
+    for _, v in ipairs(def.items) do sys.itemList[v] = true end
 
-    for _, v in ipairs(def.items) do
-        sys.itemList[v] = true
-    end
-
-    -- CREATE
     function sys:create(item)
         if self.instances[item] then return end
-
-        -- tránh ESP player
         if item.Parent and item.Parent:FindFirstChild("Humanoid") then return end
-
+        
         local part = getMain(item)
         if not part then return end
 
         local highlight = Instance.new("Highlight")
+        highlight.Name = "ESPHighlight"
         highlight.FillColor = self.colors.fill
         highlight.FillTransparency = espConfig.fillTransparency
         highlight.OutlineColor = self.colors.outline
         highlight.Parent = item
 
         local bill = Instance.new("BillboardGui")
+        bill.Name = "ESPName"
         bill.Size = UDim2.new(0,200,0,40)
         bill.StudsOffset = Vector3.new(0,2,0)
         bill.AlwaysOnTop = true
@@ -146,7 +82,7 @@ for _, def in ipairs(espDefinitions) do
         local txt = Instance.new("TextLabel")
         txt.Size = UDim2.new(1,0,1,0)
         txt.BackgroundTransparency = 1
-        txt.Text = "["..self.key.."] "..item.Name
+        txt.Text = "["..self.key.."] "..(item.Name == "Default" and "Crate" or item.Name)
         txt.TextColor3 = self.colors.text
         txt.TextStrokeTransparency = 0
         txt.Font = Enum.Font.GothamBold
@@ -161,11 +97,9 @@ for _, def in ipairs(espDefinitions) do
                 bill:Destroy()
             end
         end)
-
-        self.instances[item] = {h=highlight,b=bill,c=conn}
+        self.instances[item] = {h=highlight, b=bill, c=conn}
     end
 
-    -- REMOVE
     function sys:remove(item)
         local e = self.instances[item]
         if not e then return end
@@ -175,39 +109,21 @@ for _, def in ipairs(espDefinitions) do
         self.instances[item] = nil
     end
 
-    -- REFRESH
     function sys:refresh()
-        for item,_ in pairs(self.instances) do
-            self:remove(item)
-        end
-
+        for item,_ in pairs(self.instances) do self:remove(item) end
         if not self.vars.ESP then return end
-
-        local foundFolder = false
-
-        for _,folder in ipairs(foldersToScan) do
+        
+        for _, folder in ipairs(foldersToScan) do
             if folder then
-                foundFolder = true
-                for _,v in ipairs(folder:GetChildren()) do
-                    if self.itemList[v.Name] then
-                        self:create(v)
-                    end
-                end
-            end
-        end
-
-        -- fallback workspace
-        if not foundFolder then
-            for _,v in ipairs(workspace:GetChildren()) do
-                if self.itemList[v.Name] then
-                    self:create(v)
+                for _, v in ipairs(folder:GetChildren()) do
+                    if self.itemList[v.Name] then self:create(v) end
                 end
             end
         end
     end
 
     -- LISTENERS
-    for _,folder in ipairs(foldersToScan) do
+    for _, folder in ipairs(foldersToScan) do
         if folder then
             folder.ChildAdded:Connect(function(v)
                 task.wait(0.2)
@@ -215,21 +131,16 @@ for _, def in ipairs(espDefinitions) do
                     sys:create(v)
                 end
             end)
-
             folder.ChildRemoved:Connect(function(v)
                 sys:remove(v)
             end)
         end
     end
-
     espSystems[def.key] = sys
 end
 
 --// ================= UI TOGGLE =================
-local order = {
-    "Gun","Weapons","Medical","Armor","Food",
-    "Resource","Fuel","Ammo","Consumables","Backpacks","Breakables"
-}
+local order = { "Gun","Weapons","Medical","Armor","Food", "Resource","Fuel","Ammo","Consumables","Backpacks","Breakables", "Crates" }
 
 for _, key in ipairs(order) do
     Home:AddToggle({
