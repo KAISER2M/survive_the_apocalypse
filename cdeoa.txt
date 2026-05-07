@@ -32,7 +32,8 @@ local foldersToScan = {
     Workspace:FindFirstChild("DroppedItems"),
     Workspace:FindFirstChild("Structures"),
     Workspace:FindFirstChild("Characters"),
-    Workspace:FindFirstChild("Map") and Workspace.Map:FindFirstChild("Crates") -- Folder Crate của bạn
+	Workspace:FindFirstChild("Backpack"),
+    Workspace:FindFirstChild("Map") and Workspace.Map:FindFirstChild("Crates")
 }
 
 local espSystems = {}
