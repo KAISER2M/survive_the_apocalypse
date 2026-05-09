@@ -14,6 +14,20 @@ local FOLDER_NAME = "DroppedItems"
 local OFFSET = Vector3.new(0, 0, 5) 
 local collector = false 
 
+-- Hàm tìm mặt đất để đặt đồ xuống khi tắt
+local function dropToGround(part)
+    local raycastParams = RaycastParams.new()
+    raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+    raycastParams.FilterDescendantsInstances = {part, player.Character}
+    
+    -- Bắn một tia từ trên món đồ xuống dưới 100 unit
+    local raycastResult = workspace:Raycast(part.Position, Vector3.new(0, -100, 0), raycastParams)
+    
+    if raycastResult then
+        part.CFrame = CFrame.new(raycastResult.Position + Vector3.new(0, part.Size.Y/2, 0))
+    end
+end
+
 PlayerTab:AddToggle({
     Name = "Collector Item",
     Description = "Hút vật phẩm rơi xung quanh",
@@ -27,12 +41,10 @@ PlayerTab:AddToggle({
                 for _, item in pairs(droppedItems:GetChildren()) do
                     local p = item:IsA("BasePart") and item or item:FindFirstChildWhichIsA("BasePart")
                     if p then
-                        -- GIẢI PHÁP CHỐNG LƠ LỬNG:
-                        p.Anchored = false -- Đảm bảo đồ không bị đóng băng trên không
-                        p.CanCollide = true -- Cho phép chạm đất
-                        
-                        -- Ép một lực rơi xuống đất ngay lập tức
-                        p.AssemblyLinearVelocity = Vector3.new(0, -20, 0) 
+                        -- TẮT: Đặt đồ xuống đất ngay lập tức thay vì để nó trôi
+                        p.CanCollide = true
+                        p.Anchored = true -- Trong game Survival, Anchored giúp đồ không bị văng linh tinh
+                        dropToGround(p)
                     end
                 end
             end
@@ -57,10 +69,11 @@ RunService.RenderStepped:Connect(function()
         if p then
             local distance = (hrp.Position - p.Position).Magnitude
             if distance <= COLLECT_RANGE then
-                p.Anchored = false -- Phải bỏ Anchored thì mới bay theo mình được
+                -- BẬT: Tạm thời bỏ Anchored để di chuyển
+                p.Anchored = false
                 p.CanCollide = false
+                p.CFrame = p.CFrame:Lerp(CFrame.new(targetPos), 0.2)
                 p.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-                p.CFrame = p.CFrame:Lerp(CFrame.new(targetPos), 0.2) 
             end
         end
     end
