@@ -1,75 +1,70 @@
-local UILibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/zxcursedsocute/UI-Library/refs/heads/main/UI-Library.txt"))()
-local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
 local player = Players.LocalPlayer
-local collector = false
 
-local windows = UILibrary.CreateWindow("MIYU HUB", "", "590", "V1.1")
-local PlayerTab = windows:AddTab("PLAYER", "PLAYER")
-local MainSection = PlayerTab:AddSection('MAIN')
+-- Load thư viện UI
+local UILibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/zxcursedsocute/UI-Library/refs/heads/main/UI-Library.txt"))()
+local windows = UILibrary.CreateWindow("MIYU HUB ","","590","V1.1")
 
-local COLLECT_RANGE = 11
+local PlayerTab = windows:AddTab("PLAYER","PLAYER")
+PlayerTab:AddSection('MAIN')
+
+-- Cấu hình hút đồ
+local COLLECT_RANGE = 15 
 local FOLDER_NAME = "DroppedItems"
-local OFFSET = Vector3.new(0, 0, 5)
-local collectedItems = {}
+local OFFSET = Vector3.new(0, 0, 5) -- Đồ bay sau lưng 5 unit
+local collector = false 
 
-local function attachItem(p, hrp)
-    if collectedItems[p] then return end
-    p.CanCollide = false
-    p.Anchored = false
-    local backPosition = hrp.CFrame * CFrame.new(OFFSET)
-    p.CFrame = backPosition
-    local weld = Instance.new("WeldConstraint")
-    weld.Part0 = hrp
-    weld.Part1 = p
-    weld.Parent = p
-    collectedItems[p] = weld
-end
+-- Toggle
+PlayerTab:AddToggle({
+    Name = "Collector Item",
+    Description = "Hút vật phẩm rơi xung quanh",
+    Default = false,
+    Callback = function(v)
+        collector = v
+        
+        -- Logic trả đồ về trạng thái vật lý khi tắt
+        if not v then
+            local droppedItems = workspace:FindFirstChild(FOLDER_NAME)
+            if droppedItems then
+                for _, item in pairs(droppedItems:GetChildren()) do
+                    local p = item:IsA("BasePart") and item or item:FindFirstChildWhichIsA("BasePart")
+                    if p then
+                        p.CanCollide = true 
+                        -- Thêm chút lực văng ra khi tắt cho nó "nghệ"
+                        p.Velocity = Vector3.new(math.random(-5,5), 2, math.random(-5,5)) 
+                    end
+                end
+            end
+        end
+    end,
+})
 
-local function releaseItem(p, weld)
-    if weld and weld.Parent then
-        weld:Destroy()
-    end
-    p.Anchored = false
-    p.CanCollide = true
-    p.AssemblyLinearVelocity = Vector3.new(0, -1, 0) -- kích gravity
-    p.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
-end
-
-local function releaseAll()
-    for p, weld in pairs(collectedItems) do
-        pcall(function()
-            releaseItem(p, weld)
-        end)
-    end
-    collectedItems = {}
-end
-
+-- Vòng lặp RenderStepped (Cập nhật vị trí mỗi khung hình)
 RunService.RenderStepped:Connect(function()
     if not collector then return end
+    
     local char = player.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-    local hrp = char.HumanoidRootPart
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+
     local droppedItems = workspace:FindFirstChild(FOLDER_NAME)
-    if droppedItems then
-        for _, item in pairs(droppedItems:GetChildren()) do
-            local p = item:IsA("BasePart") and item or item:FindFirstChildWhichIsA("BasePart")
-            if p and not collectedItems[p] then
-                if (hrp.Position - p.Position).Magnitude <= COLLECT_RANGE then
-                    attachItem(p, hrp)
-                end
+    if not droppedItems then return end
+
+    -- Tính toán vị trí bay theo sau lưng nhân vật
+    local targetPos = (hrp.CFrame * CFrame.new(OFFSET)).Position
+
+    for _, item in pairs(droppedItems:GetChildren()) do
+        local p = item:IsA("BasePart") and item or item:FindFirstChildWhichIsA("BasePart")
+        if p then
+            local distance = (hrp.Position - p.Position).Magnitude
+            
+            if distance <= COLLECT_RANGE then
+                p.CanCollide = false
+                p.Velocity = Vector3.new(0, 0, 0)
+                -- 0.2 là tốc độ hút, số càng nhỏ hút càng mượt/chậm
+                p.CFrame = p.CFrame:Lerp(CFrame.new(targetPos), 0.2) 
             end
         end
     end
 end)
-
-MainSection:AddToggle({
-    Name = "Collector Item",
-    Description = 'Hút vật phẩm rơi xung quanh',
-    Callback = function(v)
-        collector = v
-        if not v then
-            releaseAll()
-        end
-    end,
-})
