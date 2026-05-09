@@ -11,32 +11,25 @@ PlayerTab:AddSection('MAIN')
 -- Cấu hình
 local COLLECT_RANGE = 25 
 local FOLDER_NAME = "DroppedItems"
-local OFFSET = Vector3.new(0, 0, 5)
 local collector = false 
 
 PlayerTab:AddToggle({
     Name = "Collector Item",
-    Description = "Bật để hút - Tắt để đồ rơi tự nhiên",
+    Description = "Hút đồ bằng lực (Không lỗi Store)",
     Default = false,
     Callback = function(v)
         collector = v
-        
         if not v then
-            -- LOGIC RESET VỀ TRẠNG THÁI GỐC
             local droppedItems = workspace:FindFirstChild(FOLDER_NAME)
             if droppedItems then
                 for _, item in pairs(droppedItems:GetChildren()) do
                     local p = item:IsA("BasePart") and item or item:FindFirstChildWhichIsA("BasePart")
                     if p then
-                        p.CanCollide = true -- Bật lại va chạm
-                        p.Anchored = false  -- Tắt đóng băng để nó rớt xuống
-                        
-                        -- Reset vận tốc về 0 rồi cho nó một lực rơi nhẹ
-                        p.AssemblyLinearVelocity = Vector3.new(0, -1, 0)
-                        p.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
-                        
-                        -- Đánh thức vật lý: Ép game tính toán lại trọng lực cho món đồ này
-                        p:ApplyImpulse(Vector3.new(0, -0.1, 0)) 
+                        -- Xóa lực hút khi tắt
+                        local force = p:FindFirstChild("MiyuForce")
+                        if force then force:Destroy() end
+                        p.CanCollide = true
+                        p.Anchored = false
                     end
                 end
             end
@@ -54,19 +47,29 @@ RunService.RenderStepped:Connect(function()
     local droppedItems = workspace:FindFirstChild(FOLDER_NAME)
     if not droppedItems then return end
 
-    local targetPos = (hrp.CFrame * CFrame.new(OFFSET)).Position
-
     for _, item in pairs(droppedItems:GetChildren()) do
         local p = item:IsA("BasePart") and item or item:FindFirstChildWhichIsA("BasePart")
         if p then
             local distance = (hrp.Position - p.Position).Magnitude
             if distance <= COLLECT_RANGE then
-                -- Khi đang hút: Vô hiệu hóa vật lý tạm thời
                 p.CanCollide = false
                 p.Anchored = false
-                p.CFrame = p.CFrame:Lerp(CFrame.new(targetPos), 0.2)
-                -- Ép vận tốc bằng 0 để không bị văng khi đang hút
-                p.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                
+                -- TẠO LỰC HÚT VẬT LÝ (Thay vì dùng CFrame)
+                local force = p:FindFirstChild("MiyuForce") or Instance.new("BodyVelocity")
+                force.Name = "MiyuForce"
+                force.Parent = p
+                
+                local targetPos = (hrp.CFrame * CFrame.new(0, 0, 5)).Position
+                local direction = (targetPos - p.Position)
+                
+                force.MaxForce = Vector3.new(90000, 90000, 90000) -- Đủ mạnh để hút nhưng không làm đồ bị "cứng"
+                force.Velocity = direction * 8 -- Tốc độ bay theo sau lưng
+            else
+                -- Nếu ngoài tầm hút thì xóa lực để nó rớt xuống
+                local force = p:FindFirstChild("MiyuForce")
+                if force then force:Destroy() end
+                p.CanCollide = true
             end
         end
     end
