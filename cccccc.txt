@@ -1,0 +1,95 @@
+local UILibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/zxcursedsocute/UI-Library/refs/heads/main/UI-Library.txt"))()
+
+local windows = UILibrary.CreateWindow("MIYU HUB ","","590","V1.1")
+
+local Player = windows:AddTab("PLAYER","PLAYER")
+Player:AddSection('MAIN')
+
+local COLLECT_RANGE = 11 -- Khoảng cách hút (studs)
+local FOLDER_NAME = "DroppedItems"
+local OFFSET = Vector3.new(0, 0, 5) -- Vị trí sau lưng nhân vật
+ 
+-- Lưu danh sách item đang bị hút (để xử lý khi tắt)
+local collectedItems = {} -- { [part] = weld }
+ 
+-- Hàm gắn item vào nhân vật (dùng WeldConstraint để không rớt)
+local function attachItem(p, hrp)
+    if collectedItems[p] then return end -- đã gắn rồi thì bỏ qua
+ 
+    p.CanCollide = false
+    p.Anchored = false
+ 
+    -- Đặt vị trí item về sau lưng trước khi weld
+    local backPosition = hrp.CFrame * CFrame.new(OFFSET)
+    p.CFrame = backPosition
+ 
+    -- Tạo WeldConstraint để item bám chặt vào HRP
+    local weld = Instance.new("WeldConstraint")
+    weld.Part0 = hrp
+    weld.Part1 = p
+    weld.Parent = p
+ 
+    collectedItems[p] = weld
+end
+ 
+-- Hàm thả item ra (khi tắt collector)
+local function releaseItem(p, weld)
+    if weld and weld.Parent then
+        weld:Destroy()
+    end
+ 
+    -- Bật lại vật lý để item rơi tự nhiên
+    p.CanCollide = true
+    -- Không cần set Anchored vì item gốc không bao giờ Anchored
+    -- Velocity = 0 để item rơi thẳng xuống, không bắn đi
+    p.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+    p.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+end
+ 
+-- Hàm tắt toàn bộ, thả hết items
+local function releaseAll()
+    for p, weld in pairs(collectedItems) do
+        pcall(function()
+            releaseItem(p, weld)
+        end)
+    end
+    collectedItems = {}
+end
+ 
+RunService.RenderStepped:Connect(function()
+    if not collector then return end
+ 
+    local char = player.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+ 
+    local hrp = char.HumanoidRootPart
+    local droppedItems = workspace:FindFirstChild(FOLDER_NAME)
+ 
+    if droppedItems then
+        for _, item in pairs(droppedItems:GetChildren()) do
+            local p = item:IsA("BasePart") and item or item:FindFirstChildWhichIsA("BasePart")
+            if p then
+                -- Chỉ hút những item chưa được gắn
+                if not collectedItems[p] then
+                    if (hrp.Position - p.Position).Magnitude <= COLLECT_RANGE then
+                        attachItem(p, hrp)
+                    end
+                end
+            end
+        end
+    end
+end)
+ 
+ 
+ 
+Player:AddToggle({
+    Name = "Collector Item",
+    Description = 'Hút vật phẩm rơi xung quanh',
+    Callback = function(v)
+        collector = v
+        if not v then
+            -- Tắt → thả hết item, rơi tự nhiên
+            releaseAll()
+        end
+    end,
+})
