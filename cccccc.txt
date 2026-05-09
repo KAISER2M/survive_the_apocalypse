@@ -2,20 +2,18 @@ local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 
--- Load thư viện UI
+-- Khai báo UI
 local UILibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/zxcursedsocute/UI-Library/refs/heads/main/UI-Library.txt"))()
 local windows = UILibrary.CreateWindow("MIYU HUB ","","590","V1.1")
-
 local PlayerTab = windows:AddTab("PLAYER","PLAYER")
 PlayerTab:AddSection('MAIN')
 
--- Cấu hình hút đồ
-local COLLECT_RANGE = 15 
+-- Cấu hình
+local COLLECT_RANGE = 20 
 local FOLDER_NAME = "DroppedItems"
-local OFFSET = Vector3.new(0, 0, 5) -- Đồ bay sau lưng 5 unit
+local OFFSET = Vector3.new(0, 0, 5) 
 local collector = false 
 
--- Toggle
 PlayerTab:AddToggle({
     Name = "Collector Item",
     Description = "Hút vật phẩm rơi xung quanh",
@@ -23,16 +21,18 @@ PlayerTab:AddToggle({
     Callback = function(v)
         collector = v
         
-        -- Logic trả đồ về trạng thái vật lý khi tắt
         if not v then
             local droppedItems = workspace:FindFirstChild(FOLDER_NAME)
             if droppedItems then
                 for _, item in pairs(droppedItems:GetChildren()) do
                     local p = item:IsA("BasePart") and item or item:FindFirstChildWhichIsA("BasePart")
                     if p then
-                        p.CanCollide = true 
-                        -- Thêm chút lực văng ra khi tắt cho nó "nghệ"
-                        p.Velocity = Vector3.new(math.random(-5,5), 2, math.random(-5,5)) 
+                        -- GIẢI PHÁP CHỐNG LƠ LỬNG:
+                        p.Anchored = false -- Đảm bảo đồ không bị đóng băng trên không
+                        p.CanCollide = true -- Cho phép chạm đất
+                        
+                        -- Ép một lực rơi xuống đất ngay lập tức
+                        p.AssemblyLinearVelocity = Vector3.new(0, -20, 0) 
                     end
                 end
             end
@@ -40,7 +40,6 @@ PlayerTab:AddToggle({
     end,
 })
 
--- Vòng lặp RenderStepped (Cập nhật vị trí mỗi khung hình)
 RunService.RenderStepped:Connect(function()
     if not collector then return end
     
@@ -51,18 +50,16 @@ RunService.RenderStepped:Connect(function()
     local droppedItems = workspace:FindFirstChild(FOLDER_NAME)
     if not droppedItems then return end
 
-    -- Tính toán vị trí bay theo sau lưng nhân vật
     local targetPos = (hrp.CFrame * CFrame.new(OFFSET)).Position
 
     for _, item in pairs(droppedItems:GetChildren()) do
         local p = item:IsA("BasePart") and item or item:FindFirstChildWhichIsA("BasePart")
         if p then
             local distance = (hrp.Position - p.Position).Magnitude
-            
             if distance <= COLLECT_RANGE then
+                p.Anchored = false -- Phải bỏ Anchored thì mới bay theo mình được
                 p.CanCollide = false
-                p.Velocity = Vector3.new(0, 0, 0)
-                -- 0.2 là tốc độ hút, số càng nhỏ hút càng mượt/chậm
+                p.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
                 p.CFrame = p.CFrame:Lerp(CFrame.new(targetPos), 0.2) 
             end
         end
