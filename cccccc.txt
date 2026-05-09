@@ -2,49 +2,35 @@ local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 
--- Khai báo UI
+-- UI Library
 local UILibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/zxcursedsocute/UI-Library/refs/heads/main/UI-Library.txt"))()
 local windows = UILibrary.CreateWindow("MIYU HUB ","","590","V1.1")
 local PlayerTab = windows:AddTab("PLAYER","PLAYER")
 PlayerTab:AddSection('MAIN')
 
--- Cấu hình
-local COLLECT_RANGE = 20 
+-- Config
+local COLLECT_RANGE = 25 
 local FOLDER_NAME = "DroppedItems"
-local OFFSET = Vector3.new(0, 0, 5) 
 local collector = false 
-
--- Hàm tìm mặt đất để đặt đồ xuống khi tắt
-local function dropToGround(part)
-    local raycastParams = RaycastParams.new()
-    raycastParams.FilterType = Enum.RaycastFilterType.Exclude
-    raycastParams.FilterDescendantsInstances = {part, player.Character}
-    
-    -- Bắn một tia từ trên món đồ xuống dưới 100 unit
-    local raycastResult = workspace:Raycast(part.Position, Vector3.new(0, -100, 0), raycastParams)
-    
-    if raycastResult then
-        part.CFrame = CFrame.new(raycastResult.Position + Vector3.new(0, part.Size.Y/2, 0))
-    end
-end
 
 PlayerTab:AddToggle({
     Name = "Collector Item",
-    Description = "Hút vật phẩm rơi xung quanh",
+    Description = "Hút vật phẩm (Sửa lỗi lơ lửng)",
     Default = false,
     Callback = function(v)
         collector = v
         
         if not v then
+            -- Khi tắt: Trả tự do hoàn toàn cho đồ
             local droppedItems = workspace:FindFirstChild(FOLDER_NAME)
             if droppedItems then
                 for _, item in pairs(droppedItems:GetChildren()) do
                     local p = item:IsA("BasePart") and item or item:FindFirstChildWhichIsA("BasePart")
                     if p then
-                        -- TẮT: Đặt đồ xuống đất ngay lập tức thay vì để nó trôi
                         p.CanCollide = true
-                        p.Anchored = true -- Trong game Survival, Anchored giúp đồ không bị văng linh tinh
-                        dropToGround(p)
+                        p.Anchored = false -- QUAN TRỌNG: Phải tắt Anchored
+                        -- Đẩy nhẹ một cái để "thức tỉnh" vật lý của Server
+                        p.AssemblyLinearVelocity = Vector3.new(0, -2, 0) 
                     end
                 end
             end
@@ -62,18 +48,21 @@ RunService.RenderStepped:Connect(function()
     local droppedItems = workspace:FindFirstChild(FOLDER_NAME)
     if not droppedItems then return end
 
-    local targetPos = (hrp.CFrame * CFrame.new(OFFSET)).Position
-
     for _, item in pairs(droppedItems:GetChildren()) do
         local p = item:IsA("BasePart") and item or item:FindFirstChildWhichIsA("BasePart")
         if p then
             local distance = (hrp.Position - p.Position).Magnitude
             if distance <= COLLECT_RANGE then
-                -- BẬT: Tạm thời bỏ Anchored để di chuyển
+                -- Thay vì dùng CFrame.Lerp (dễ bị dính trên ko)
+                -- Ta dùng vận tốc để "đẩy" đồ về phía sau lưng
                 p.Anchored = false
                 p.CanCollide = false
-                p.CFrame = p.CFrame:Lerp(CFrame.new(targetPos), 0.2)
-                p.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                
+                local targetPos = (hrp.CFrame * CFrame.new(0, 0, 5)).Position
+                local direction = (targetPos - p.Position)
+                
+                -- Tạo lực hút mượt mà bằng Velocity
+                p.AssemblyLinearVelocity = direction * 10 
             end
         end
     end
