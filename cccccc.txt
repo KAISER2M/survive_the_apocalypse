@@ -8,29 +8,35 @@ local windows = UILibrary.CreateWindow("MIYU HUB ","","590","V1.1")
 local PlayerTab = windows:AddTab("PLAYER","PLAYER")
 PlayerTab:AddSection('MAIN')
 
--- Config
+-- Cấu hình
 local COLLECT_RANGE = 25 
 local FOLDER_NAME = "DroppedItems"
+local OFFSET = Vector3.new(0, 0, 5)
 local collector = false 
 
 PlayerTab:AddToggle({
     Name = "Collector Item",
-    Description = "Hút vật phẩm (Sửa lỗi lơ lửng)",
+    Description = "Bật để hút - Tắt để đồ rơi tự nhiên",
     Default = false,
     Callback = function(v)
         collector = v
         
         if not v then
-            -- Khi tắt: Trả tự do hoàn toàn cho đồ
+            -- LOGIC RESET VỀ TRẠNG THÁI GỐC
             local droppedItems = workspace:FindFirstChild(FOLDER_NAME)
             if droppedItems then
                 for _, item in pairs(droppedItems:GetChildren()) do
                     local p = item:IsA("BasePart") and item or item:FindFirstChildWhichIsA("BasePart")
                     if p then
-                        p.CanCollide = true
-                        p.Anchored = false -- QUAN TRỌNG: Phải tắt Anchored
-                        -- Đẩy nhẹ một cái để "thức tỉnh" vật lý của Server
-                        p.AssemblyLinearVelocity = Vector3.new(0, -2, 0) 
+                        p.CanCollide = true -- Bật lại va chạm
+                        p.Anchored = false  -- Tắt đóng băng để nó rớt xuống
+                        
+                        -- Reset vận tốc về 0 rồi cho nó một lực rơi nhẹ
+                        p.AssemblyLinearVelocity = Vector3.new(0, -1, 0)
+                        p.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+                        
+                        -- Đánh thức vật lý: Ép game tính toán lại trọng lực cho món đồ này
+                        p:ApplyImpulse(Vector3.new(0, -0.1, 0)) 
                     end
                 end
             end
@@ -48,21 +54,19 @@ RunService.RenderStepped:Connect(function()
     local droppedItems = workspace:FindFirstChild(FOLDER_NAME)
     if not droppedItems then return end
 
+    local targetPos = (hrp.CFrame * CFrame.new(OFFSET)).Position
+
     for _, item in pairs(droppedItems:GetChildren()) do
         local p = item:IsA("BasePart") and item or item:FindFirstChildWhichIsA("BasePart")
         if p then
             local distance = (hrp.Position - p.Position).Magnitude
             if distance <= COLLECT_RANGE then
-                -- Thay vì dùng CFrame.Lerp (dễ bị dính trên ko)
-                -- Ta dùng vận tốc để "đẩy" đồ về phía sau lưng
-                p.Anchored = false
+                -- Khi đang hút: Vô hiệu hóa vật lý tạm thời
                 p.CanCollide = false
-                
-                local targetPos = (hrp.CFrame * CFrame.new(0, 0, 5)).Position
-                local direction = (targetPos - p.Position)
-                
-                -- Tạo lực hút mượt mà bằng Velocity
-                p.AssemblyLinearVelocity = direction * 10 
+                p.Anchored = false
+                p.CFrame = p.CFrame:Lerp(CFrame.new(targetPos), 0.2)
+                -- Ép vận tốc bằng 0 để không bị văng khi đang hút
+                p.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
             end
         end
     end
